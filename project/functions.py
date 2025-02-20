@@ -172,15 +172,44 @@ def calc_enthalpy(mass: float, specific_heat_capacity: float, temperature: float
 
 
 def store_plot_data(
-    data: dict[str, NDArray], file_path: str, group_path: str, metadata: dict[str, Any]
+    data: dict[str, np.ndarray], file_path: str, group_path: str, metadata: dict[str, Any]
 ) -> None:
-    pass
+    """Saves processed data and metadata into an HDF5 file."""
+    
+    # Convert dictionary to Pandas DataFrame
+    df = pd.DataFrame(data)
+    
+    # Open or create HDF5 file and store data
+    with pd.HDFStore(file_path, mode="a") as store:
+        store.put(group_path, df, format="table", data_columns=True)
+
+        # Store metadata as attributes
+        with h5.File(file_path, "a") as hdf_file:
+            group = hdf_file.require_group(group_path)
+            for key, value in metadata.items():
+                group.attrs[key] = value
+    
+    print(f"✅ Data successfully stored in {file_path} under '{group_path}'")
 
 
 def read_plot_data(
     file_path: str, group_path: str
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    pass
+    """Reads data and metadata from an HDF5 file."""
+
+    # Load DataFrame from HDF5 file
+    with pd.HDFStore(file_path, mode="r") as store:
+        df = store[group_path]
+
+    # Load metadata
+    metadata = {}
+    with h5.File(file_path, "r") as hdf_file:
+        if group_path in hdf_file:
+            group = hdf_file[group_path]
+            metadata = {key: group.attrs[key] for key in group.attrs.keys()}
+
+    print(f"✅ Data successfully loaded from {file_path} under '{group_path}'")
+    return df, metadata
 
 
 def plot_data(data: pd.DataFrame, formats: dict[str, str]) -> Figure:

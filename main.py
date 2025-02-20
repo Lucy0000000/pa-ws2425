@@ -159,6 +159,45 @@ def main():
     fn.store_plot_data(df_data, h5_path, group_path, metadata)
     print(f"✅ Processed data successfully saved to {h5_path}")
 
+    # 📌 Aufgabe 5: Daten archivieren (HDF5-Speicherung)
+    h5_path = "project/data/data_GdD_plot_WS2425.h5"  # Define the HDF5 file path
+    group_path = "processed_data"  # Define the group where data will be stored
+
+    # Define metadata
+    metadata = {
+        "legend_title": "Internal Energy Analysis",
+        "x_label": "Time (s)",
+        "x_unit": "s",
+        "y_label": "Internal Energy (J)",
+        "y_unit": "J",
+    }
+
+    # Store processed data in HDF5 file
+    fn.store_plot_data(df_data, h5_path, group_path, metadata)
+    print(f"✅ Processed data successfully saved to {h5_path}")
+
+    # 📌 Test: Read stored data to verify
+    df_loaded, metadata_loaded = fn.read_plot_data(h5_path, group_path)
+    print("✅ Loaded data preview:")
+    print(df_loaded.head())  # Show first few rows of stored data
+    print("✅ Loaded metadata:")
+    print(metadata_loaded)  # Show stored metadata
+     # 📌 Aufgabe 5d: Daten archivieren (HDF5-Speicherung)
+    h5_path = "project/data/data_GdD_plot_WS2425.h5"  # Path to the HDF5 file
+    group_path = "processed_data"  # Group where data will be stored in HDF5
+
+    # Define metadata dictionary
+    metadata = {
+        "legend_title": "Internal Energy Analysis",
+        "x_label": "Time (s)",
+        "x_unit": "s",
+        "y_label": "Internal Energy (J)",
+        "y_unit": "J",
+    }
+
+    # ✅ Store processed data in HDF5 file
+    fn.store_plot_data(df_data, h5_path, group_path, metadata)
+    print(f"✅ Processed data successfully saved to {h5_path}")
 
 if __name__ == "__main__":
     main()
