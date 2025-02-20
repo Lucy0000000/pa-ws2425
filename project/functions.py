@@ -213,13 +213,38 @@ def read_plot_data(
 
 
 def plot_data(data: pd.DataFrame, formats: dict[str, str]) -> Figure:
-    pass
+    """Generates a plot for internal energy over time with different filter sizes."""
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
 
+    # Plot all available internal energy columns
+    for column in data.columns:
+        if "inner_energy" in column:
+            ax.plot(data["time"], data[column], label=column.replace("_", " ").title())
 
-def publish_plot(
-    fig: Figure, source_paths: str | list[str], destination_path: str
-) -> None:
-    pass
+    # Format the plot
+    ax.set_xlabel(formats.get("x_label", "Time (s)"))
+    ax.set_ylabel(formats.get("y_label", "Internal Energy (J)"))
+    ax.set_title(formats.get("legend_title", "Internal Energy Analysis"))
+    ax.legend()
+    ax.grid(True)
+
+    print("✅ Plot successfully created!")
+    return fig
+
+def publish_plot(fig: Figure, source_paths: str | list[str], destination_path: str) -> None:
+    """Saves and publishes a plot."""
+
+    # Ensure the destination directory exists
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+
+    # Save the figure
+    fig.savefig(destination_path, dpi=300, bbox_inches="tight")
+    print(f"✅ Plot successfully saved to {destination_path}")
+
+    # Publish the plot using the given paths
+    publish(fig, source_paths, destination_path)
+    print("✅ Plot successfully published!")
 
 
 if __name__ == "__main__":

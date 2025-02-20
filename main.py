@@ -198,6 +198,16 @@ def main():
     # ✅ Store processed data in HDF5 file
     fn.store_plot_data(df_data, h5_path, group_path, metadata)
     print(f"✅ Processed data successfully saved to {h5_path}")
+ 
+    df_loaded, metadata_loaded = fn.read_plot_data(h5_path, group_path)
 
+    # Generate plot using stored metadata
+    fig = fn.plot_data(df_loaded, metadata_loaded)
+
+    # Define destination path
+    destination_path = "./plotid/GdD_WS2425_<Matrikelnummer>_plot.png"
+
+    # Publish the plot
+    fn.publish_plot(fig, h5_path, destination_path)
 if __name__ == "__main__":
     main()
