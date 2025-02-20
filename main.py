@@ -121,7 +121,6 @@ def main():
             processed_data[f"level_k_{filter_size}"], tank_footprint, density
         )
 
-        # **🔧 Fix: Ensure mass and temperature arrays have the same length**
         min_length = min(
             processed_data[f"mass_k_{filter_size}"].shape[0],
             raw_data["temperature"].shape[0],
@@ -131,14 +130,12 @@ def main():
         raw_data["temperature"] = raw_data["temperature"][:min_length]
         df_data["time"] = df_data["time"][:min_length]
 
-        # **🔥 Task 4e: Compute internal energy**
         inner_energy = []
 
-        for i in range(min_length):  # ✅ Fixed: Only iterate up to min_length
+        for i in range(min_length):
             Q_zu = fn.calc_heater_heat_flux(P_heater, eta_heater)
             Q_ab = fn.calc_convective_heat_flow(k_tank, area_tank, raw_data["temperature"][i], T_env)
             H_zu = fn.calc_enthalpy(processed_data[f"mass_k_{filter_size}"][i], specific_heat_capacity, raw_data["temperature"][i])
-
             E_t = Q_zu - Q_ab + H_zu + E_0
             inner_energy.append(E_t)
 
@@ -146,7 +143,21 @@ def main():
         print(f"✅ Internal energy calculated for filter size {filter_size}")
 
     print("✅ All data successfully processed!")
-    print("Final processed data:", {k: v.shape for k, v in df_data.items()})
+
+    # 📌 Aufgabe 5: Daten archivieren (HDF5-Speicherung)
+    h5_path = "project/data/data_GdD_plot_WS2425.h5"
+    group_path = "processed_data"
+
+    metadata = {
+        "legend_title": "Internal Energy Analysis",
+        "x_label": "Time (s)",
+        "x_unit": "s",
+        "y_label": "Internal Energy (J)",
+        "y_unit": "J",
+    }
+
+    fn.store_plot_data(df_data, h5_path, group_path, metadata)
+    print(f"✅ Processed data successfully saved to {h5_path}")
 
 
 if __name__ == "__main__":
