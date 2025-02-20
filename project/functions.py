@@ -39,15 +39,29 @@ def read_data(file: str, path: str) -> np.ndarray | None:
 
 
 def check_equal_length(*arrays: NDArray) -> bool:
-    pass
+    """
+    Überprüft, ob alle übergebenen Arrays die gleiche Länge haben.
+
+    :param arrays: Beliebig viele NumPy-Arrays
+    :return: True, wenn alle Arrays gleich lang sind, sonst False
+    """
+    return len(set(map(len, arrays))) == 1
 
 
 def process_time_data(data: NDArray) -> NDArray:
-    pass
+    """
+    Converts timestamps from milliseconds to seconds and normalizes them to start at zero.
 
+    :param data: Array of timestamps in milliseconds.
+    :return: Array of timestamps in seconds, starting from zero.
+    """
+    data_sec = data / 1000  # Convert milliseconds to seconds
+    return data_sec - data_sec[0]  # Normalize by subtracting the first value
 
 def remove_negatives(array: NDArray) -> NDArray:
-    pass
+    """Removes all negative values from the given array."""
+    return array[array >= 0]
+
 
 
 def linear_interpolation(

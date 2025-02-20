@@ -9,6 +9,8 @@ import project.functions as fn
 def main():
     import h5py  # ✅ Import innerhalb der Funktion erlaubt
 
+    df_data = {}
+
     brewing = "brewing_0002"
     tank_id = "B004"
     measured_quantities = ("level", "temperature", "timestamp")
@@ -28,6 +30,7 @@ def main():
                 print(f"✅ Tank {tank_id} exists!")  
                 tank_group = file[brewing][tank_id]  
                 print("Available datasets in tank group:", list(tank_group.keys()))
+
             else:
                 print(f"⚠️ Tank {tank_id} not found!")
         else:
@@ -42,7 +45,7 @@ def main():
     print("Final verification of the read data:", raw_data)
 
     # Check if all required arrays exist
-    if not all(q in raw_data and raw_data[q] is not None for q in measured_quantities):
+    if not all(q in raw_data for q in measured_quantities):
         raise ValueError("❌ Error: At least one measurement value is missing!")
 
     # Check if all arrays have the same length
@@ -55,15 +58,18 @@ def main():
 
     for key in measured_quantities:
         raw_data[key] = raw_data[key][:min_length]
-        print(f"After shortening: {key} -> Length: {len(raw_data[key])}")  # Debug-Print
 
     # Check again after shortening
     new_lengths = {key: len(value) for key, value in raw_data.items()}
-    print("Final array lengths after shortening:", new_lengths)
+    print("Lengths of the arrays after shortening:", new_lengths)
 
     # If there is still a mismatch after shortening → detailed error message
     if len(set(new_lengths.values())) > 1:
         raise ValueError(f"❌ Error: Arrays do not have the same length after processing! {new_lengths}")
+
+    # ✅ **3b: Remove negative values from level**
+    raw_data["level"] = fn.remove_negatives(raw_data["level"])
+    print("✅ Negative values in level removed.")
 
     # Convert timestamps if stored in nanoseconds
     print("First timestamp converted:", datetime.datetime.utcfromtimestamp(raw_data["timestamp"][0] / 1e9))
