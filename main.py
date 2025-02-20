@@ -6,13 +6,13 @@ import numpy as np
 import project.functions as fn
 
 def main():
-    import h5py  # ✅ Import innerhalb der Funktion erlaubt
-    import numpy as np  # Falls numpy nicht oben importiert ist
+    import h5py  # ✅ Allowed to import within function
+    import numpy as np  # Ensure NumPy is available
 
     # Define variables
-    processed_data = {}  # Speichert gefilterte und verarbeitete Daten
-    df_data = {}  # Speichert Daten wie Zeit
-    filter_sizes = (3, 5, 7)  # Definiere verschiedene Filtergrößen
+    processed_data = {}  # Stores filtered and processed data
+    df_data = {}  # Stores time data
+    filter_sizes = (3, 5, 7)  # Define different filter sizes
 
     brewing = "brewing_0002"
     tank_id = "B004"
@@ -44,7 +44,7 @@ def main():
         print(f"📥 Reading {quantity} from {data_path}...")
         raw_data[quantity] = fn.read_data(file_path, data_path)
 
-        # Debugging-Ausgabe
+        # Debugging Output
         print(f"🔍 Debug: {quantity} -> type: {type(raw_data[quantity])}, value: {raw_data[quantity][:5]}")
 
     print("Final verification of the read data:", {k: v.shape for k, v in raw_data.items()})
@@ -74,7 +74,7 @@ def main():
     df_data["time"] = fn.process_time_data(raw_data["timestamp"])
     print(f"🕒 First 5 processed timestamps: {df_data['time'][:5]}")
 
-    # 🛠 **Fix: Check if `time` is sorted & contains unique values**
+    # Ensure time is sorted
     if not np.all(np.diff(df_data["time"]) > 0):
         print("⚠️ Warning: `time` is not strictly increasing. Sorting...")
         sorted_indices = np.argsort(df_data["time"])
@@ -86,20 +86,21 @@ def main():
     for key in ["level", "temperature"]:
         print(f"🔄 Checking NaN values in {key}...")
 
-        # **Fix: Prüfen, ob NaN-Werte vorhanden sind**
         if np.isnan(raw_data[key]).sum() == 0:
             print(f"✅ No NaN values in {key}. Skipping interpolation.")
         else:
             print(f"🔄 Interpolating NaN values in {key}...")
             raw_data[key] = fn.interpolate_nan_data(df_data["time"], raw_data[key])
-            
-            # **Fix: Überprüfen, ob Interpolation funktioniert hat**
+
             if raw_data[key] is None or np.isnan(raw_data[key]).sum() > 0:
                 raise ValueError(f"❌ Error: Interpolation failed for '{key}'! Check input data!")
 
             print(f"✅ {key} successfully interpolated!")
 
-    # Step 7: Apply filtering
+    # Step 7: Apply filtering and calculate mass
+    tank_footprint = 2.5  # Example footprint value in m²
+    density = 1000  # Example density value in kg/m³
+
     for filter_size in filter_sizes:
         print(f"📊 Applying moving average filter of size {filter_size}...")
 
@@ -117,9 +118,19 @@ def main():
 
         processed_data[f"level_k_{filter_size}"] = fn.filter_data(interpolated_level, filter_size)
 
+        # Calculate mass
+        print(f"⚖️ Calculating mass for filter size {filter_size}...")
+        processed_data[f"mass_k_{filter_size}"] = fn.calc_mass(
+            processed_data[f"level_k_{filter_size}"], tank_footprint, density
+        )
+
+        if processed_data[f"mass_k_{filter_size}"] is None:
+            raise ValueError(f"❌ Error: calc_mass() returned None for filter size {filter_size}!")
+
     print("✅ All data successfully filtered and processed!")
     print("Final processed data:", {k: v.shape for k, v in processed_data.items()})
 
 
 if __name__ == "__main__":
     main()
+

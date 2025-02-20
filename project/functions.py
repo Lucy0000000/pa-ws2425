@@ -126,14 +126,29 @@ def calc_heater_heat_flux(P_heater: float, eta_heater: float) -> float:
 
 
 
-def calc_convective_heat_flow(
-    k_tank: float, area_tank: float, t_total: float, t_env: float
-) -> float:
-    pass
+def calc_convective_heat_flow(k_tank: float, area_tank: float, t_total: float, t_env: float) -> float:
+    """
+    
+
+    :param k_tank:(k)
+    :param area_tank:  (A_s)
+    :param t_total:  (T)
+    :param t_env: (T_env)
+    :return: (Q_ab)
+    """
+    return k_tank * area_tank * (t_total - t_env)
+
 
 
 def calc_mass(level_data: NDArray, tank_footprint: float, density: float) -> NDArray:
-    pass
+    print(f"🔍 Debugging calc_mass: level_data[:5]={level_data[:5] if level_data is not None else 'None'}, "
+          f"tank_footprint={tank_footprint}, density={density}")
+
+    if level_data is None or tank_footprint is None or density is None:
+        print("❌ Error: One or more inputs to calc_mass() are None!")
+        return None
+
+    return level_data * tank_footprint * density
 
 
 def calc_enthalpy(
