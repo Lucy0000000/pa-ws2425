@@ -67,15 +67,31 @@ def remove_negatives(array: NDArray) -> NDArray:
 def linear_interpolation(
     time: NDArray, start_time: float, end_time: float, start_y: float, end_y: float
 ) -> NDArray:
-    pass
+    """Performs linear interpolation for a given time range."""
+    slope = (end_y - start_y) / (end_time - start_time)  
+    return start_y + slope * (time - start_time)  
+
 
 
 def interpolate_nan_data(time: NDArray, y_data: NDArray) -> NDArray:
-    pass
+    """Interpolates NaN values in y_data based on time using linear interpolation."""
+    
+    # Falls es keine NaN-Werte gibt, gib einfach das Original-Array zurück
+    if np.isnan(y_data).sum() == 0:
+        print("✅ No NaN values detected. Returning original data.")
+        return y_data  
+
+    # Falls ALLE Werte NaN sind, kann nicht interpoliert werden → Fehler ausgeben
+    nan_mask = np.isnan(y_data)
+    if nan_mask.all():
+        raise ValueError("❌ Error: All values in y_data are NaN! Cannot interpolate.")
+
+    # Lineare Interpolation
+    return np.interp(time, time[~nan_mask], y_data[~nan_mask])
 
 
 def filter_data(data: NDArray, window_size: int) -> NDArray:
-    """Filter data using a moving average approach.
+    """Filter data using a moving average approach (SMA).
 
     Args:
         data (NDArray): Data to be filtered
@@ -86,16 +102,28 @@ def filter_data(data: NDArray, window_size: int) -> NDArray:
     """
     output = []
     pad_width = window_size // 2
-    padded_data = np.pad(array=data, pad_width=pad_width, mode="edge")
+    padded_data = np.pad(array=data, pad_width=pad_width, mode="edge")  # Padding to handle edges
+
     for i in range(pad_width, padded_data.size - pad_width):
-        # Implementieren Sie hier den SMA!
-        sma = []
+        sma = np.mean(padded_data[i - pad_width : i + pad_width + 1])  # Compute SMA
         output.append(sma)
+
     return np.array(output)
 
 
+
 def calc_heater_heat_flux(P_heater: float, eta_heater: float) -> float:
-    pass
+    """Calculates the heat flux provided by the heater.
+
+    Args:
+        P_heater (float): Electrical power input to the heater (W)
+        eta_heater (float): Efficiency of the heater (0 to 1)
+
+    Returns:
+        float: Heat flux delivered to the system (W)
+    """
+    return P_heater * eta_heater
+
 
 
 def calc_convective_heat_flow(
