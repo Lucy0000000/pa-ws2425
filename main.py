@@ -7,7 +7,7 @@ import project.functions as fn
 
 
 def main():
-    import h5py  # ✅ Import innerhalb der Funktion erlaubt
+    import h5py  # ✅ Import allowed inside the function
 
     df_data = {}
 
@@ -20,47 +20,62 @@ def main():
 
     raw_data = {}
 
-    # Öffne die HDF5-Datei
+    # Open the HDF5 file
     with h5py.File(file_path, "r") as file:  
-        print("Hauptgruppen:", list(file.keys()))  
+        print("Main groups:", list(file.keys()))  
 
         if brewing in file:
-            print(f"Verfügbare Untergruppen in {brewing}:", list(file[brewing].keys()))
+            print(f"Available subgroups in {brewing}:", list(file[brewing].keys()))
             if tank_id in file[brewing]:
-                print(f"✅ Tank {tank_id} ist vorhanden!")  
+                print(f"✅ Tank {tank_id} exists!")  
                 tank_group = file[brewing][tank_id]  
-                print("Verfügbare Datensätze in tank_group:", list(tank_group.keys()))
+                print("Available datasets in tank group:", list(tank_group.keys()))
 
                 datasets = list(tank_group.keys())  
             else:
-                print(f"⚠️ Tank {tank_id} wurde nicht gefunden!")
+                print(f"⚠️ Tank {tank_id} not found!")
         else:
-            print(f"⚠️ Gruppe {brewing} wurde nicht gefunden!")
+            print(f"⚠️ Group {brewing} not found!")
 
-    # Messdaten aus der Datei lesen
+    # Read measurement data from the file
     for quantity in measured_quantities:
         data_path = f"{tank_path}/{quantity}"  
         raw_data[quantity] = fn.read_data(file_path, data_path)  
         print(f"Debug: {quantity} -> {raw_data[quantity]}")  
 
-    print("Finale Überprüfung der ausgelesenen Daten:", raw_data)
+    print("Final verification of the read data:", raw_data)
 
-    # Prüfe, ob alle Arrays die gleiche Länge haben
+    # Check if all required arrays exist
+    if not all(q in raw_data for q in measured_quantities):
+        raise ValueError("❌ Error: At least one measurement value is missing!")
+
+    # Check if all arrays have the same length
     lengths = {key: len(value) for key, value in raw_data.items()}
-    print("Längen der Arrays:", lengths)
-    
-    if len(set(lengths.values())) > 1:
-        raise ValueError("❌ Fehler: Die gelesenen Arrays haben unterschiedliche Längen!")
+    print("Lengths of the arrays before verification:", lengths)
 
-    # Falls Timestamps in Nanosekunden gespeichert sind, umrechnen
-    print("Erster Timestamp umgerechnet:", datetime.datetime.utcfromtimestamp(raw_data["timestamp"][0] / 1e9))
+    # If lengths are different → shorten all arrays
+    min_length = min(lengths.values())
+    print(f"Shortening all arrays to the smallest length: {min_length}")
 
-    # Prüfe auf NaN-Werte in den Daten
+    for key in measured_quantities:
+        raw_data[key] = raw_data[key][:min_length]
+
+    # Check again after shortening
+    new_lengths = {key: len(value) for key, value in raw_data.items()}
+    print("Lengths of the arrays after shortening:", new_lengths)
+
+    # If there is still a mismatch after shortening → detailed error message
+    if len(set(new_lengths.values())) > 1:
+        raise ValueError(f"❌ Error: Arrays have different lengths after shortening! {new_lengths}")
+
+    # Convert timestamps if stored in nanoseconds
+    print("First timestamp converted:", datetime.datetime.utcfromtimestamp(raw_data["timestamp"][0] / 1e9))
+
+    # Check for NaN values in the data
     for key in raw_data:
-        print(f"{np.isnan(raw_data[key]).sum()} NaN-Werte in {key}")
+        print(f"{np.isnan(raw_data[key]).sum()} NaN values in {key}")
 
-    print("✅ Alle Daten erfolgreich geladen und geprüft!")
-
+    print("✅ All data successfully loaded and verified!")
 
 if __name__ == "__main__":
     main()
