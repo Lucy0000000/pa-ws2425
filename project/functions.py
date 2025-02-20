@@ -151,10 +151,24 @@ def calc_mass(level_data: NDArray, tank_footprint: float, density: float) -> NDA
     return level_data * tank_footprint * density
 
 
-def calc_enthalpy(
-    mass: float, specific_heat_capacity: float, temperature: float
-) -> float:
-    pass
+def calc_enthalpy(mass: float, specific_heat_capacity: float, temperature: float) -> float:
+    if mass is None or specific_heat_capacity is None or temperature is None:
+        raise ValueError("❌ Error: One or more input values for calc_enthalpy() are None!")
+
+    if np.isscalar(mass) and np.isnan(mass):
+        raise ValueError("❌ Error: Mass is NaN!")
+    if np.isscalar(temperature) and np.isnan(temperature):
+        raise ValueError("❌ Error: Temperature is NaN!")
+
+    print(f"🔍 Debug: mass = {mass[:5] if isinstance(mass, np.ndarray) else mass}, "
+          f"temp = {temperature[:5] if isinstance(temperature, np.ndarray) else temperature}")
+
+    return mass * specific_heat_capacity * temperature
+
+
+
+
+
 
 
 def store_plot_data(

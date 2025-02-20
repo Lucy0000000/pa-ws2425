@@ -5,6 +5,8 @@ import numpy as np
 
 import project.functions as fn
 
+
+
 def main():
     import h5py  # ✅ Allowed to import within function
     import numpy as np  # Ensure NumPy is available
@@ -97,9 +99,10 @@ def main():
 
             print(f"✅ {key} successfully interpolated!")
 
-    # Step 7: Apply filtering and calculate mass
+    # Step 7: Apply filtering, calculate mass, and calculate enthalpy
     tank_footprint = 2.5  # Example footprint value in m²
     density = 1000  # Example density value in kg/m³
+    specific_heat_capacity = 4184  # J/(kg*K) for water-like substances
 
     for filter_size in filter_sizes:
         print(f"📊 Applying moving average filter of size {filter_size}...")
@@ -127,10 +130,26 @@ def main():
         if processed_data[f"mass_k_{filter_size}"] is None:
             raise ValueError(f"❌ Error: calc_mass() returned None for filter size {filter_size}!")
 
+        # **🔧 Fix: Ensure mass and temperature arrays have the same length**
+        min_length = min(
+            processed_data[f"mass_k_{filter_size}"].shape[0],
+            raw_data["temperature"].shape[0]
+        )
+
+        processed_data[f"mass_k_{filter_size}"] = processed_data[f"mass_k_{filter_size}"][:min_length]
+        raw_data["temperature"] = raw_data["temperature"][:min_length]
+
+        print(f"🔥 Calculating enthalpy for filter size {filter_size}...")
+        processed_data[f"enthalpy_k_{filter_size}"] = fn.calc_enthalpy(
+            processed_data[f"mass_k_{filter_size}"], specific_heat_capacity, raw_data["temperature"]
+        )
+
+        if processed_data[f"enthalpy_k_{filter_size}"] is None:
+            raise ValueError(f"❌ Error: calc_enthalpy() returned None for filter size {filter_size}!")
+
     print("✅ All data successfully filtered and processed!")
     print("Final processed data:", {k: v.shape for k, v in processed_data.items()})
 
 
 if __name__ == "__main__":
     main()
-
