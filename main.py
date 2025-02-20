@@ -7,10 +7,10 @@ import project.functions as fn
 
 
 def main():
-    """Main function to read, verify, and process HDF5 data."""
-    import h5py  # ✅ Import inside the function
-    
-    # Define file path and dataset structure
+    import h5py  # ✅ Import innerhalb der Funktion erlaubt
+
+    df_data = {}
+
     brewing = "brewing_0002"
     tank_id = "B004"
     measured_quantities = ("level", "temperature", "timestamp")
@@ -20,7 +20,7 @@ def main():
 
     raw_data = {}
 
-    # Open the HDF5 file and check structure
+    # Open the HDF5 file
     with h5py.File(file_path, "r") as file:  
         print("Main groups:", list(file.keys()))  
 
@@ -33,10 +33,8 @@ def main():
 
             else:
                 print(f"⚠️ Tank {tank_id} not found!")
-                return
         else:
             print(f"⚠️ Group {brewing} not found!")
-            return
 
     # Read measurement data from the file
     for quantity in measured_quantities:
@@ -67,7 +65,7 @@ def main():
 
     # If there is still a mismatch after shortening → detailed error message
     if len(set(new_lengths.values())) > 1:
-        raise ValueError(f"❌ Error: Arrays have different lengths after shortening! {new_lengths}")
+        raise ValueError(f"❌ Error: Arrays do not have the same length after processing! {new_lengths}")
 
     # Convert timestamps if stored in nanoseconds
     print("First timestamp converted:", datetime.datetime.utcfromtimestamp(raw_data["timestamp"][0] / 1e9))
@@ -77,7 +75,6 @@ def main():
         print(f"{np.isnan(raw_data[key]).sum()} NaN values in {key}")
 
     print("✅ All data successfully loaded and verified!")
-
 
 if __name__ == "__main__":
     main()
