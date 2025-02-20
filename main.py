@@ -7,10 +7,10 @@ import project.functions as fn
 
 
 def main():
-    import h5py  # ✅ Import allowed inside the function
-
-    df_data = {}
-
+    """Main function to read, verify, and process HDF5 data."""
+    import h5py  # ✅ Import inside the function
+    
+    # Define file path and dataset structure
     brewing = "brewing_0002"
     tank_id = "B004"
     measured_quantities = ("level", "temperature", "timestamp")
@@ -20,7 +20,7 @@ def main():
 
     raw_data = {}
 
-    # Open the HDF5 file
+    # Open the HDF5 file and check structure
     with h5py.File(file_path, "r") as file:  
         print("Main groups:", list(file.keys()))  
 
@@ -31,11 +31,12 @@ def main():
                 tank_group = file[brewing][tank_id]  
                 print("Available datasets in tank group:", list(tank_group.keys()))
 
-                datasets = list(tank_group.keys())  
             else:
                 print(f"⚠️ Tank {tank_id} not found!")
+                return
         else:
             print(f"⚠️ Group {brewing} not found!")
+            return
 
     # Read measurement data from the file
     for quantity in measured_quantities:
@@ -76,6 +77,7 @@ def main():
         print(f"{np.isnan(raw_data[key]).sum()} NaN values in {key}")
 
     print("✅ All data successfully loaded and verified!")
+
 
 if __name__ == "__main__":
     main()
