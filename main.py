@@ -7,7 +7,7 @@ import project.functions as fn
 
 
 def main():
-    import h5py  # ✅ Import innerhalb der Funktion erlaubt
+    import h5py  
 
     brewing = "brewing_0002"
     tank_id = "B004"
@@ -15,9 +15,10 @@ def main():
 
     file_path = "project/data/data_GdD_Datensatz_WS2425.h5"
     tank_path = f"{brewing}/{tank_id}"  
+
     raw_data = {}
 
-    # Öffne die HDF5-Datei
+    # Open the HDF5 file
     with h5py.File(file_path, "r") as file:  
         print("Main groups:", list(file.keys()))  
 
@@ -32,58 +33,58 @@ def main():
         else:
             print(f"⚠️ Group {brewing} not found!")
 
-    # 📥 Daten einlesen
+    # Read measurement data from the file
     for quantity in measured_quantities:
-        data_path = f"{tank_path}/{quantity}"
-        print(f"🔍 Reading {quantity} from {data_path}...")  # Debug
+        data_path = f"{tank_path}/{quantity}"  
         raw_data[quantity] = fn.read_data(file_path, data_path)  
-
-        if raw_data[quantity] is None:
-            print(f"⚠️ Warning: No data found for {quantity}!")
+        print(f"🔵 Reading {quantity} from {data_path}...")
 
     print("Final verification of the read data:", raw_data)
 
-    # ❗ Fehlerbehandlung für fehlende Daten
-    if not all(q in raw_data and raw_data[q] is not None for q in measured_quantities):
+    # Check if all required arrays exist
+    if not all(q in raw_data for q in measured_quantities):
         raise ValueError("❌ Error: At least one measurement value is missing!")
 
-    # 📏 Überprüfung der Längen
-    lengths = {key: len(value) if value is not None else 0 for key, value in raw_data.items()}
+    # Check if all arrays have the same length
+    lengths = {key: len(value) for key, value in raw_data.items()}
     print("Lengths of the arrays before verification:", lengths)
 
-    # ⏳ Kürzen auf die kleinste Länge
+    # If lengths are different → shorten all arrays
     min_length = min(lengths.values())
     print(f"Shortening all arrays to the smallest length: {min_length}")
 
     for key in measured_quantities:
         raw_data[key] = raw_data[key][:min_length]
 
-    # 📏 Erneute Überprüfung der Längen
+    # Check again after shortening
     new_lengths = {key: len(value) for key, value in raw_data.items()}
     print("Final array lengths after shortening:", new_lengths)
 
     if len(set(new_lengths.values())) > 1:
         raise ValueError(f"❌ Error: Arrays do not have the same length after processing! {new_lengths}")
 
-    # 🔢 Negativwerte entfernen
-    for key in ["level", "temperature"]:
-        if np.any(raw_data[key] < 0):
-            print(f"⚠️ Negative values detected in {key}, removing...")
-            raw_data[key] = fn.remove_negatives(raw_data[key])
+    # Convert timestamps if stored in nanoseconds
+    raw_data["timestamp"] = fn.process_time_data(raw_data["timestamp"])
+    print(f"First 5 processed timestamps: {raw_data['timestamp'][:5]}")
 
-    # 🔄 Interpolation von NaN-Werten
+    # Interpolate NaN values
     for key in ["level", "temperature"]:
-        if np.isnan(raw_data[key]).sum() > 0:
-            print(f"🔄 Interpolating NaN values in {key}...")
-            raw_data[key] = fn.interpolate_nan_data(raw_data["timestamp"], raw_data[key])
+        print(f"🔵 Interpolating NaN values in {key}...")
+        raw_data[key] = fn.interpolate_nan_data(raw_data["timestamp"], raw_data[key])
 
     print("✅ All NaN values interpolated successfully!")
 
-    # ⏳ Zeitdaten umwandeln
-    raw_data["timestamp"] = fn.process_time_data(raw_data["timestamp"])
+    # Filter data using moving average (SMA)
+    window_size = 5  # Example: Use a window of 5 data points
+    for key in ["level", "temperature"]:
+        print(f"🟢 Applying moving average filter to {key}...")
+        raw_data[key] = fn.filter_data(raw_data[key], window_size)
+    
+    print("✅ All data successfully filtered!")
 
-    # 🛠 Debug-Ausgabe der ersten Timestamps
-    print("First 5 processed timestamps:", raw_data["timestamp"][:5])
+    # Check for NaN values in the data
+    for key in raw_data:
+        print(f"{np.isnan(raw_data[key]).sum()} NaN values in {key}")
 
     print("✅ All data successfully loaded and verified!")
 
